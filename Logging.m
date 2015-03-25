@@ -126,9 +126,33 @@ BOOL EnableLog( BOOL enable )
 
 BOOL _WillLogTo( NSString *domain )
 {
-    if( _gShouldLog == -1 )
-        InitLogging();
-    return _gShouldLog && (domain==nil || [sEnabledDomains containsObject: domain]);
+    
+    /*
+     * Trying to fix #249
+     * https://www.fabric.io/pleno/ios/apps/no.familieplan.familieplan/issues/547eb89e65f8dfea153c1267/sessions/54f593ff01410001034f353034383661
+     *
+     * Looks like sEnabledDomains could be nil because we are calling it in two threads at once... let's see
+     *
+     */
+    
+    @try {
+        
+        if( _gShouldLog == -1 )
+            InitLogging();
+        
+        if (sEnabledDomains == nil)
+            return false;
+        
+        return _gShouldLog && (domain==nil || [sEnabledDomains containsObject: domain]);
+    }
+    @catch (NSException *exception) {
+        return false;
+    }
+    
+    /*
+     * End of Fix
+     */
+    
 }
 
 BOOL _EnableLogTo( NSString *domain, BOOL enable )
